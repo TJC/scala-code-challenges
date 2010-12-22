@@ -8,3 +8,8 @@ WordFinder
 
 Given a collection of letters, find all the words you can build out of them.
 (Requires /usr/share/dict/words to exist on your computer)
+
+Euler
+-----
+
+Attempts to solve various http://ProjectEuler.net challenges.
