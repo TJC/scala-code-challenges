@@ -8,4 +8,10 @@ def isPrime(x: Int) : Boolean = x match {
     case _ => !( (2 to ceil(sqrt(x)).toInt).exists(i => x%i == 0) )
 }
 
-println( (2 to 1999999).filter(isPrime).reduceLeft(_+_) )
+// Need to find a better way of handling this; if I call it the same
+// name as isPrime, but try to dispatch to it with toInt, then it goes
+// recursive.
+def isBigPrime(x: BigInt) : Boolean = isPrime(x.toInt)
+
+println( (BigInt(2) to BigInt(1999999)).filter(isBigPrime).reduceLeft(_+_) )
+
