@@ -3,14 +3,14 @@ import scala.io.Source
 object WordFinder {
 
     def main(args: Array[String]) {
-        val avail_chars = new AWord(args(0))
+        val avail_chars = AWord(args(0))
         println("Freq map: " + avail_chars)
 
         val wordlist = Source.fromFile("/usr/share/dict/words")
 
-        val matches = wordlist.getLines.filter(
-            word => new AWord(word) <= avail_chars
-        ).toList
+        def word_subset(x: String) = AWord(x) <= avail_chars
+
+        val matches = wordlist.getLines.filter(word_subset).toList
         // toList is needed or else we can only walk the iterator once,
         // but in that case it does seem to do the disk-reading only when we
         // finally need the values out of it, which is neat.
@@ -21,7 +21,7 @@ object WordFinder {
         println("Perfect match:")
 
         matches.filter(
-            word => avail_chars == new AWord(word)
+            word => avail_chars == AWord(word)
         )
         .foreach(println)
 
@@ -37,10 +37,9 @@ class AWord(word: String) {
 
     // ignore characters other than a-z, and map upper to lower case
     // then put the counts into the array:
-    word.toCharArray.map(_.toLower)
-    .filter(
-        c => c >= 'a' && c <= 'z'
-    )
+    def only_letters(c: Char) = c >= 'a' && c <= 'z'
+
+    word.toCharArray.map(_.toLower).filter(only_letters)
     .foreach(
         c => letter_freq(c.getNumericValue - Aval) += 1
     )
@@ -70,4 +69,9 @@ class AWord(word: String) {
     override def toString =
         letter_freq.map(_.toString).reduceLeft(_ + "," + _)
 
+}
+
+// Companion object to give us an easier constructor
+object AWord {
+    def apply(word: String) : AWord = new AWord(word)
 }
