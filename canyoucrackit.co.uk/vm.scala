@@ -61,6 +61,8 @@ class virtmachine {
     var reg = Array(0,0,0,0, 0, 0x10)
         // r0, r1, r2, r3, cs, ds
 
+    // I belatedly realised that you needed to be able to adjust the cs and ds
+    // from the code by register index, so these are just shortcuts now:
     def cs = reg(4)
     def ds = reg(5)
 
@@ -120,6 +122,9 @@ class virtmachine {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 )
 
+    // I'd like it if this was a map of function pointers instead, I think.
+    // Also, in hindsight, an array would have been acceptable instead of
+    // a map.
     val opcode_lookup = Map(
         0 -> "jmp",
         1 -> "movr",
@@ -131,8 +136,12 @@ class virtmachine {
         7 -> "hlt"
     )
 
+    // just run through everything; could really be while(1) actually..
     def run = while (ip < mem.size) do_instruction
-        // Thread.sleep(500) }
+        // Thread.sleep(500)
+
+
+    // Assorted functions to output current state:
 
     def disp_hlt = printf("%#06x hlt\n", ip)
 
@@ -168,6 +177,10 @@ class virtmachine {
             case false => 0x00
         }
 
+        // With hindsight, this wasn't a great way to implement this :/
+        // The similarities between opcodes means it would have made more
+        // sense to put the "mod" handling inside them.
+        // Each opcode function returns the new instruction pointer.
         ip = opcode match {
             case "hlt" => op_hlt
             case "jmp" => mod match {
@@ -221,14 +234,14 @@ class virtmachine {
 
     def op_jmp1(op1: Int, op2: Int) = {
         disp_2_imm("jmp", op1, op2)
-        reg(4) = op2
-        (op2 * 16) + reg(op1)
+        reg(4) = op2 // ie. cs
+        (cs * 16) + reg(op1)
     }
 
     def op_jmpe0(op1: Int) = {
         disp_1_arg("jmpe", op1)
         fl match {
-            case 0 => (reg(4) * 16) + reg(op1)
+            case 0 => (cs * 16) + reg(op1)
             case _ => ip + 1 // ie. noop
         }
     }
@@ -237,8 +250,8 @@ class virtmachine {
         disp_2_imm("jmpe", op1, op2)
         fl match {
             case 0 => {
-                reg(4) = op2
-                (op2 * 16) + reg(op1)
+                reg(4) = op2 // ie. cs
+                (cs * 16) + reg(op1)
             }
             case _ => ip + 2 // ie. noop
         }
@@ -330,18 +343,18 @@ class virtmachine {
         }
 
 
-        def dumpMemory = {
-            print_regs
+    def dumpMemory = {
+        print_regs
 
-            mem.toList.
-                map( c => if (c > 31 && c < 127) c else 32).
-                foreach(printf("%c", _))
-            printf("\n")
-        }
+        mem.toList.
+            map( c => if (c > 31 && c < 127) c else 32).
+            foreach(printf("%c", _))
+        printf("\n")
+    }
     
 }
 
-class InterpreterHalted() extends java.lang.Throwable
+class InterpreterHalted extends java.lang.Throwable
 
 object vmemu extends App {
     println("Starting VM..")
